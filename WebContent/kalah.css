@@ -1,0 +1,15 @@
+@CHARSET "UTF-8";
+table{
+    table-layout: fixed;
+    width: 300px;
+}
+
+#north {
+    background-color: #0352af;
+    color: white;
+}
+
+#south {
+    background-color: #af0005;
+    color: white;
+}
