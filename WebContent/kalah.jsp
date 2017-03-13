@@ -62,7 +62,7 @@
 	<c:choose>
 		<c:when test="${!gameReady && !gameFinished}">
 			<h2>Please enter player names:</h2>
-			<form action="/kalah/kalah" method="POST">
+			<form action="<c:url value="/kalah" />" method="POST">
 				<p>First player name:</p>
 				<input type="text" name="firstPlayerName"> <br />
 				<p>Second player name:</p>
@@ -75,7 +75,7 @@
 		<c:when test="${gameReady && !gameFinished}">
 			<h2>Player Move</h2>
 			<p>${playerToMove} enter pit number to move:</p>
-			<form action="/kalah/kalah" method="POST">
+			<form action="<c:url value="/kalah" />" method="POST">
 				<input type="text" name="playerMove" /> <input type="hidden"
 					name="playersForm" value="false"> <input type="hidden"
 					name="moveForm" value="true"> <input type="submit"
@@ -88,7 +88,7 @@
 		<c:when test="${!gameReady && gameFinished}">
 			<h2>Winner:</h2>
 			<p>${winnerName}!</p>
-			<form action="/kalah/kalah" method="GET">
+			<form action="<c:url value="/kalah" />" method="GET">
 				<input type="submit" value="Play Again." />
 			</form>
 		</c:when>

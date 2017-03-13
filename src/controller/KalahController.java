@@ -7,6 +7,7 @@ import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import entities.Game;
 import entities.Player;
@@ -17,8 +18,6 @@ import entities.Player;
 @WebServlet("/kalah")
 public class KalahController extends HttpServlet {
 	private static final long serialVersionUID = 1L;
-	
-	private Game game;
        
     /**
      * @see HttpServlet#HttpServlet()
@@ -32,7 +31,7 @@ public class KalahController extends HttpServlet {
 	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		//initial get request return the fresh jsp to the user
+		//initial get request return the fresh jsp
 		request.setAttribute("gameReady", false);
 		request.setAttribute("gameFinished", false);
         request.getRequestDispatcher("/kalah.jsp").forward(request, response);
@@ -48,14 +47,12 @@ public class KalahController extends HttpServlet {
 			String secondPlayerName = request.getParameter("secondPlayerName");
 			
 			if(firstPlayerName.length() > 0 && secondPlayerName.length() > 0) {
-				game = new Game();
+				HttpSession session = request.getSession();
+				session.setMaxInactiveInterval(1800);
+				Game game = new Game();
 				game.start(firstPlayerName, secondPlayerName);
-				request.setAttribute("gameReady", true);
-				request.setAttribute("gameFinished", false);
-				request.setAttribute("playerToMove", game.getPlayerByTurn().getName());
-				request.setAttribute("nonValidMove", false);
-				request.setAttribute("houses", game.getBoard().getHouses());
-				request.setAttribute("players", game.getPlayers());
+				session.setAttribute("game", game);
+				setGameAttributes(request, game, Boolean.FALSE);
 			} else {
 				doGet(request, response);
 			}
@@ -63,6 +60,14 @@ public class KalahController extends HttpServlet {
 		
 		//if game move form do move
 		if(request.getParameter("moveForm").equals("true")) {
+			Game game = (Game)request.getSession().getAttribute("game");
+			
+			//handle if game session expires - restart game
+			if(game == null) {
+				doGet(request, response);
+				return;
+			}
+			
 			Player player = game.getPlayerByTurn(); 
 			String playerMoveString = request.getParameter("playerMove");
 			Integer playerMoveInteger = null;
@@ -73,19 +78,13 @@ public class KalahController extends HttpServlet {
 				playerMoveInteger = 0;
 			}
 
-			Boolean anotherMove = null;
 			if (playerMoveInteger != null && player != null) {
 				//validate move
 				boolean validMove = game.validateMove(player, playerMoveInteger);
 				if(validMove) {
-					anotherMove = game.move(player, playerMoveInteger);	
+					game.move(player, playerMoveInteger);	
 				} else {
-					request.setAttribute("playerToMove", player.getName());
-					request.setAttribute("gameReady", true);
-					request.setAttribute("gameFinished", false);
-					request.setAttribute("nonValidMove", true);
-					request.setAttribute("houses", game.getBoard().getHouses());
-					request.setAttribute("players", game.getPlayers());
+					setGameAttributes(request, game, Boolean.TRUE);
 				}
 			}
 			
@@ -95,30 +94,20 @@ public class KalahController extends HttpServlet {
 				request.setAttribute("gameReady", false);
 				request.setAttribute("gameFinished", true);
 				request.setAttribute("winnerName", player.getName());
-				request.setAttribute("houses", game.getBoard().getHouses());
-				request.setAttribute("players", game.getPlayers());
 			} else {
-				if (anotherMove != null && anotherMove == true) {
-					request.setAttribute("playerToMove", player.getName());
-					request.setAttribute("gameReady", true);
-					request.setAttribute("gameFinished", false);
-					request.setAttribute("nonValidMove", false);
-					request.setAttribute("houses", game.getBoard().getHouses());
-					request.setAttribute("players", game.getPlayers());
-				} else if (anotherMove != null && anotherMove == false) {
-					Player nextPlayer = game.getPlayerByTurn();
-					request.setAttribute("playerToMove", nextPlayer.getName());
-					request.setAttribute("gameReady", true);
-					request.setAttribute("gameFinished", false);
-					request.setAttribute("nonValidMove", false);
-					request.setAttribute("houses", game.getBoard().getHouses());
-					request.setAttribute("players", game.getPlayers());
-				} else {
-					//handle anotherMove as null
-				}
+				setGameAttributes(request, game, Boolean.FALSE);
 			}
 		}
 		request.getRequestDispatcher("/kalah.jsp").forward(request, response);
+	}
+
+	private void setGameAttributes(HttpServletRequest request, Game game, Boolean nonValidMove) {
+		request.setAttribute("playerToMove", game.getPlayerByTurn().getName());
+		request.setAttribute("gameReady", true);
+		request.setAttribute("gameFinished", false);
+		request.setAttribute("nonValidMove", nonValidMove);
+		request.setAttribute("houses", game.getBoard().getHouses());
+		request.setAttribute("players", game.getPlayers());
 	}
 
 }
