@@ -41,14 +41,15 @@ public class KalahController extends HttpServlet {
 	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
 	 */
 	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		HttpSession session = request.getSession();
+		session.setMaxInactiveInterval(1800);
+		
 		//if player names form check valid and create new game
 		if(request.getParameter("playersForm").equals("true")) {
 			String firstPlayerName = request.getParameter("firstPlayerName");
 			String secondPlayerName = request.getParameter("secondPlayerName");
 			
 			if(firstPlayerName.length() > 0 && secondPlayerName.length() > 0) {
-				HttpSession session = request.getSession();
-				session.setMaxInactiveInterval(1800);
 				Game game = new Game();
 				game.start(firstPlayerName, secondPlayerName);
 				session.setAttribute("game", game);
@@ -60,7 +61,7 @@ public class KalahController extends HttpServlet {
 		
 		//if game move form do move
 		if(request.getParameter("moveForm").equals("true")) {
-			Game game = (Game)request.getSession().getAttribute("game");
+			Game game = (Game)session.getAttribute("game");
 			
 			//handle if game session expires - restart game
 			if(game == null) {
@@ -82,7 +83,8 @@ public class KalahController extends HttpServlet {
 				//validate move
 				boolean validMove = game.validateMove(player, playerMoveInteger);
 				if(validMove) {
-					game.move(player, playerMoveInteger);	
+					game.move(player, playerMoveInteger);
+					session.setAttribute("game", game);
 				} else {
 					setGameAttributes(request, game, Boolean.TRUE);
 				}
